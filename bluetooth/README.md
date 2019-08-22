@@ -37,4 +37,15 @@
 ||/close|||Close bluetooth. Any connection will be break and radio will no longer transimitting.|
 ||/discovery|||Start discovery around other bluetooth device.|
 
+## Bluetooth state emit
 
+* flora subscribe name: `'yodaos.apps.bluetooth.status'`
+
+* flora message format: `[ code ]`
+
+|status|code|
+|---|---|
+|CLOSED|0|
+|OPENED|1|
+|DISCONNECTED|2|
+|CONNECTED|3|
