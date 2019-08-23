@@ -51,14 +51,18 @@ function resetLastUrl () {
   lastUrl = '/derived_from_phone'
 }
 
-function uploadEvent (mode, event, data) {
-  logger.debug('upload bluetooth event =', event)
-  var msg = {
-    profile: mode,
-    event: event,
-    data: data
+function uploadStatus (mode, state, data) {
+  var stateCode = {
+    [protocol.RADIO_STATE.OFF]: 0,
+    [protocol.RADIO_STATE.ON]: 1,
+    [protocol.CONNECTION_STATE.DISCONNECTED]: 2,
+    [protocol.CONNECTION_STATE.CONNECTED]: 3
   }
-  agent.post('yodaos.apps.bluetooth.status', [ JSON.stringify(msg) ])
+  var code = stateCode[state]
+  logger.debug(`upload bluetooth ${state}(${code})`)
+  if (code != null) {
+    agent.post('yodaos.apps.bluetooth.status', [ code ])
+  }
 }
 
 var urlHandlers = {
@@ -155,7 +159,7 @@ function handleSourceRadioOn (autoConn) {
 function onRadioStateChangedListener (mode, state, extra) {
   logger.debug(`${mode} onRadioStateChanged(${state}, ${JSON.stringify(extra)})`)
   cancelTimer()
-  uploadEvent(mode, state)
+  uploadStatus(mode, state)
   if (mode !== a2dp.getMode()) {
     logger.warn('Suppress old mode event to avoid confusing users.')
     return
@@ -189,7 +193,7 @@ function onRadioStateChangedListener (mode, state, extra) {
 function onConnectionStateChangedListener (mode, state, device) {
   logger.debug(`${mode} onConnectionStateChanged(${state})`)
   cancelTimer()
-  uploadEvent(mode, state, device)
+  uploadStatus(mode, state, device)
   if (mode !== a2dp.getMode()) {
     logger.warn('Suppress old mode event to avoid confusing users.')
     return
@@ -271,7 +275,7 @@ function onDiscoveryStateChangedListener (mode, state, extra) {
       rt.effect.stop(res.LIGHT.DISCOVERY_ON)
       break
     case protocol.DISCOVERY_STATE.FOUND_DEVICE:
-      uploadEvent(mode, state, extra)
+      uploadStatus(mode, state, extra)
       break
     default:
       break

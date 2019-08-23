@@ -40,13 +40,19 @@ This is the app for play bluetooth music.
 ||/like|||Add current song to favorite.|
 ||/info|||Query current song's information.|
 
-## YodaOS event
+## Bluetooth multimedia event emit
 
 * status event
 
   * flora subscribe name: `yodaos.apps.bluetooth.multimedia.playback-status`
 
-  * flora message format: ```Number: 0=PLAYING | 1=STOPPED | 4=PAUSED```
+  * flora message format: `[ code ]`
+
+  |status|code|
+  |---|---|
+  |PLAYING|0|
+  |STOPPED|1|
+  |PAUSED|4|
 
 * music info event
 
