@@ -109,6 +109,7 @@ function handleUrl (url) {
         if (audioFocus.state !== 'inactive') {
           audioFocus.abandon()
         }
+        uploadEvent(protocol.AUDIO_STATE.STOPPED)
       }
       break
     case '/next':
@@ -122,7 +123,7 @@ function handleUrl (url) {
     case '/ffward':
       a2dp.ffward()
       break
-    case 'rewind':
+    case '/rewind':
       a2dp.rewind()
       break
     case '/like':
@@ -130,13 +131,21 @@ function handleUrl (url) {
       a2dp.query()
       lastUrl = url
       break
-    case '/PLAYING':
+    case '/event/playing':
       logger.debug('focus state:', audioFocus.state)
       playing = true
       if (audioFocus.state !== 'active') {
         audioFocus.request()
       }
       uploadEvent(protocol.AUDIO_STATE.PLAYING)
+      break
+    case '/event/stopped':
+      logger.debug('focus state:', audioFocus.state)
+      playing = false
+      if (audioFocus.state !== 'inactive') {
+        audioFocus.abandon()
+      }
+      uploadEvent(protocol.AUDIO_STATE.STOPPED)
       break
     default:
       speak(strings.FALLBACK)
@@ -161,9 +170,8 @@ function onAudioStateChangedListener (mode, state, extra) {
       }
       if (lastUrl === '/stop') {
         audioFocus.abandon()
-      } else {
-        uploadEvent(state)
       }
+      uploadEvent(state)
       break
     case protocol.AUDIO_STATE.MUSIC_INFO:
       logger.debug(`  title: ${extra.title}`)
