@@ -51,14 +51,14 @@ function resetLastUrl () {
   lastUrl = '/derived_from_phone'
 }
 
-function uploadEvent (event, data) {
+function uploadEvent (mode, event, data) {
   logger.debug('upload bluetooth event =', event)
   var msg = {
-    profile: 'A2DP.SOURCE',
+    profile: mode,
     event: event,
     data: data
   }
-  agent.post('yodaos.apps.bluetooth', [ JSON.stringify(msg) ])
+  agent.post('yodaos.apps.bluetooth.status', [ JSON.stringify(msg) ])
 }
 
 var urlHandlers = {
@@ -95,14 +95,23 @@ var urlHandlers = {
   },
   // close bluetooth
   '/close': () => {
+    if (!a2dp.isPlaying()) {
+      service.openUrl(res.URL.BLUETOOTH_MUSIC + 'event/stopped')
+    }
     a2dp.close()
   },
   // disconnect from remote device whatever in sink or source mode
   '/disconnect': () => {
+    if (!a2dp.isPlaying()) {
+      service.openUrl(res.URL.BLUETOOTH_MUSIC + 'event/stopped')
+    }
     a2dp.disconnect()
   },
   // implied close bluetooth
   '/implied_close': () => {
+    if (!a2dp.isPlaying()) {
+      service.openUrl(res.URL.BLUETOOTH_MUSIC + 'event/stopped')
+    }
     a2dp.close()
   }
 }
@@ -146,9 +155,7 @@ function handleSourceRadioOn (autoConn) {
 function onRadioStateChangedListener (mode, state, extra) {
   logger.debug(`${mode} onRadioStateChanged(${state}, ${JSON.stringify(extra)})`)
   cancelTimer()
-  if (mode === protocol.A2DP_MODE.SOURCE) {
-    uploadEvent(state)
-  }
+  uploadEvent(mode, state)
   if (mode !== a2dp.getMode()) {
     logger.warn('Suppress old mode event to avoid confusing users.')
     return
@@ -182,9 +189,7 @@ function onRadioStateChangedListener (mode, state, extra) {
 function onConnectionStateChangedListener (mode, state, device) {
   logger.debug(`${mode} onConnectionStateChanged(${state})`)
   cancelTimer()
-  if (mode === protocol.A2DP_MODE.SOURCE) {
-    uploadEvent(state, device)
-  }
+  uploadEvent(mode, state, device)
   if (mode !== a2dp.getMode()) {
     logger.warn('Suppress old mode event to avoid confusing users.')
     return
@@ -239,7 +244,7 @@ function onAudioStateChangedListener (mode, state, extra) {
   switch (state) {
     case protocol.AUDIO_STATE.PLAYING:
       cancelTimer()
-      service.openUrl(res.URL.BLUETOOTH_MUSIC + state)
+      service.openUrl(res.URL.BLUETOOTH_MUSIC + 'event/playing')
       break
     default:
       break
@@ -266,7 +271,7 @@ function onDiscoveryStateChangedListener (mode, state, extra) {
       rt.effect.stop(res.LIGHT.DISCOVERY_ON)
       break
     case protocol.DISCOVERY_STATE.FOUND_DEVICE:
-      uploadEvent(state, extra)
+      uploadEvent(mode, state, extra)
       break
     default:
       break
